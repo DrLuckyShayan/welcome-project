@@ -1,11 +1,13 @@
-from telegram import Update
-from telegram.ext import Updater, CommandHandler, CallbackContext
+from flask import Flask, request
+from telegram import Bot, Update
+from telegram.ext import Dispatcher, CommandHandler
 
 # 🔹 جایگزین کن با توکن رباتت
 TOKEN = "7834155788:AAFToNhIee9iKCAld_NCHbPZBNhVXBJszjg"
+bot = Bot(token=TOKEN)
 
 # 🔸 پیام خوش‌آمدگویی
-def start(update: Update, context: CallbackContext) -> None:
+def start(update: Update, context) -> None:
     welcome_message = (
         "✨ **-این کلاغ سایه‌ای از آینده است-** ✨\n\n"
         "🌪 **-زمزمه‌های بازار را پیش از آنکه طوفان آغاز شود، شنیده است…-** 🌪\n\n"
@@ -14,18 +16,22 @@ def start(update: Update, context: CallbackContext) -> None:
     )
     update.message.reply_text(welcome_message, parse_mode="Markdown")
 
-# 🔸 اجرای ربات
-def main():
-    updater = Updater(TOKEN, use_context=True)
-    dp = updater.dispatcher
+# 🔸 راه‌اندازی Flask برای Webhook
+app = Flask(__name__)
 
-    # اضافه کردن دستور /start
-    dp.add_handler(CommandHandler("start", start))
+@app.route("/", methods=["POST"])
+def webhook():
+    dispatcher = Dispatcher(bot, None, workers=0)
+    dispatcher.add_handler(CommandHandler("start", start))
 
-    # شروع به گوش دادن به پیام‌ها
-    updater.start_polling()
-    updater.idle()
+    # دریافت آپدیت‌های تلگرام
+    data = request.get_json(force=True)
+    update = Update.de_json(data, bot)
 
-# اجرای کد
+    # پردازش دستور /start
+    dispatcher.process_update(update)
+    return "OK"
+
+# 🔸 اجرای Flask
 if __name__ == "__main__":
-    main()
+    app.run(host="0.0.0.0", port=5000)
