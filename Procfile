@@ -1,1 +1,1 @@
-worker: python Welcome.py
+worker: python functions/welcome.py
